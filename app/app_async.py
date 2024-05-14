@@ -377,7 +377,7 @@ if uploaded_file is not None:
         asyncio.run(main())
 
 # クリアボタン
-if st.button('Clear'):
+if st.button('Reset'):
     # 解析結果とアップロードファイルのセッション状態をクリア
     st.session_state['data'] = None
     st.session_state['result'] = None
