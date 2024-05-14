@@ -222,7 +222,7 @@ async def execute_eval(row_dict):
     
     return {"gpt_relevance": gpt_relevance, "gpt_groundedness": gpt_groundedness, "gpt_similarity": gpt_similarity, "gpt_fluency": gpt_fluency, "ada_cosine_similarity": ada_cosine_similarity_score}
 
-def _execute_eval(row_dict):
+def _execute_eval_test(row_dict):
     gpt_relevance = 1
     gpt_groundedness = 1
     gpt_similarity = 1
@@ -260,7 +260,7 @@ async def chat_completion(system, user):
     print("chat_completion: ",response.choices[0].message.content)
     return response.choices[0].message.content.strip()[:1]
 
-async def _chat_completion(system, user):
+async def _chat_completion_test(system, user):
     try:
         await asyncio.sleep(random.uniform(1.0, 2.0))
     except Exception as e:
@@ -324,7 +324,7 @@ async def process_csv(data):
     # 進捗バーの初期化
     progress_bar = st.progress(0)
     status_text = st.empty()
-    status1 = st.status("Evalating...", expanded=True)
+    status1 = st.status("Evaluating...", expanded=True)
     # 処理済みデータを格納するリスト
     processed_data = []
 
@@ -336,7 +336,7 @@ async def process_csv(data):
     # 各行ごとに処理
     for i, row in data.iterrows():
         # ステータスの更新
-        status_text.text(f'Evalating: {i + 1}/{total_rows} rows')
+        status_text.text(f'Evaluating: {i + 1}/{total_rows} rows')
 
         # 行のデータを処理
         processed_row = await execute_eval(row)
@@ -353,7 +353,7 @@ async def process_csv(data):
 
     # ステータスのクリア
     status_text.text('Evaluation complete')
-    status1.update(label="Evalation complete!", state="complete", expanded=False)
+    status1.update(label="Evaluation complete!", state="complete", expanded=False)
     return record
 
 # main coroutine
@@ -384,7 +384,7 @@ if st.button('Clear'):
 # 解析結果の表示
 if st.session_state['result'] is not None:
     # Show result
-    st.write('Evalation result:')
+    st.write('Evaluation result:')
     #st.write(st.session_state['result'])
     record = st.session_state['result']
     record_count = st.session_state['count']
