@@ -229,10 +229,10 @@ async def _execute_eval_test(row_dict):
     gpt_similarity = random.choice(string_list)
     gpt_fluency = random.choice(string_list)
     ada_cosine_similarity_score = random.choice(string_list)
-    print(row_dict["ground_truth"])
-    print(row_dict["answer"])
-    print(row_dict["context"])
-    print(row_dict["question"])
+    # print(row_dict["ground_truth"])
+    # print(row_dict["answer"])
+    # print(row_dict["context"])
+    # print(row_dict["question"])
 
     await asyncio.sleep(random.uniform(1.0, 2.0))
 
@@ -304,6 +304,15 @@ def cosine_similarity_to_bin(cosine_similarity):
     else:  # 0.8以上1以下
         return 5
 
+st.set_page_config(
+    page_title="AI Challenge Day GPT Evaluator",
+    page_icon="🎖️",
+    layout="wide",
+    initial_sidebar_state="collapsed",
+    menu_items={
+        'About': "© 2024 [@nohanaga](https://qiita.com/nohanaga)"
+    }
+)
 # タイトルの設定
 st.title('AI Challenge Day GPT Evaluator')
 
@@ -324,8 +333,6 @@ async def process_csv(data):
     progress_bar = st.progress(0)
     status_text = st.empty()
     status1 = st.status("Evaluating...", expanded=True)
-    # 処理済みデータを格納するリスト
-    processed_data = []
 
     # データ行数
     total_rows = len(data)
@@ -339,9 +346,7 @@ async def process_csv(data):
 
         # 行のデータを処理
         processed_row = await execute_eval(row)
-        processed_data.append(processed_row)
-        #time.sleep(1)
-        status1.write(processed_row)
+        status1.write(str(i) + " : " + str(processed_row))
         # 進捗バーの更新
         progress_bar.progress((i + 1) / total_rows)
 
