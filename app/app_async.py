@@ -222,7 +222,7 @@ async def execute_eval(row_dict):
     
     return {"gpt_relevance": gpt_relevance, "gpt_groundedness": gpt_groundedness, "gpt_similarity": gpt_similarity, "gpt_fluency": gpt_fluency, "ada_cosine_similarity": ada_cosine_similarity_score}
 
-def execute_eval2(row_dict):
+def _execute_eval(row_dict):
     gpt_relevance = 1
     gpt_groundedness = 1
     gpt_similarity = 1
@@ -241,7 +241,7 @@ def execute_eval2(row_dict):
 
 
 @retry(wait=wait_random_exponential(min=1, max=60), stop=stop_after_attempt(6))
-async def _chat_completion(system, user):
+async def chat_completion(system, user):
     try:
         response = await client.chat.completions.create(
             model=os.getenv("AZURE_OPENAI_DEPLOYMENT_NAME"),
@@ -260,7 +260,7 @@ async def _chat_completion(system, user):
     print("chat_completion: ",response.choices[0].message.content)
     return response.choices[0].message.content.strip()[:1]
 
-async def chat_completion(system, user):
+async def _chat_completion(system, user):
     try:
         await asyncio.sleep(random.uniform(1.0, 2.0))
     except Exception as e:
