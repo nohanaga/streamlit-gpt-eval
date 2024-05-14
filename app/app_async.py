@@ -222,22 +222,21 @@ async def execute_eval(row_dict):
     
     return {"gpt_relevance": gpt_relevance, "gpt_groundedness": gpt_groundedness, "gpt_similarity": gpt_similarity, "gpt_fluency": gpt_fluency, "ada_cosine_similarity": ada_cosine_similarity_score}
 
-def _execute_eval_test(row_dict):
-    gpt_relevance = 1
-    gpt_groundedness = 1
-    gpt_similarity = 1
-    gpt_fluency = 1
+async def _execute_eval_test(row_dict):
+    string_list = [1, 2, 3, 4, 5]
+    gpt_relevance = random.choice(string_list)
+    gpt_groundedness = random.choice(string_list)
+    gpt_similarity = random.choice(string_list)
+    gpt_fluency = random.choice(string_list)
+    ada_cosine_similarity_score = random.choice(string_list)
     print(row_dict["ground_truth"])
     print(row_dict["answer"])
     print(row_dict["context"])
     print(row_dict["question"])
 
-    if len(row_dict["answer"])>0 and len(row_dict["context"])>0:
-        print("answer and context")
-    else:
-        print("answer or context is empty")
+    await asyncio.sleep(random.uniform(1.0, 2.0))
 
-    return {"gpt_relevance": gpt_relevance, "gpt_groundedness": gpt_groundedness, "gpt_similarity": gpt_similarity, "gpt_fluency": gpt_fluency, "ada_cosine_similarity": 1}
+    return {"gpt_relevance": gpt_relevance, "gpt_groundedness": gpt_groundedness, "gpt_similarity": gpt_similarity, "gpt_fluency": gpt_fluency, "ada_cosine_similarity": ada_cosine_similarity_score}
 
 
 @retry(wait=wait_random_exponential(min=1, max=60), stop=stop_after_attempt(6))
@@ -366,7 +365,7 @@ if uploaded_file is not None:
     # CSVファイルの読み込み
     data = pd.read_csv(uploaded_file)
     st.session_state['data'] = data.replace(np.nan, '', regex=True)
-
+    st.write(st.session_state['data'])
     # OKボタンを設置
     if st.button('Start evaluation', type="primary"):
         # CSVデータの処理
