@@ -3,4 +3,4 @@ pandas
 numpy
 openai
 tenacity
-dotenv
+python-dotenv
