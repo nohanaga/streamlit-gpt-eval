@@ -164,11 +164,23 @@ stars:"""
 # Load environment's settings
 load_dotenv()
 
-client = AsyncAzureOpenAI(
-    api_key=os.getenv("AZURE_OPENAI_API_KEY"),
-    api_version=os.getenv("AZURE_OPENAI_API_VERSION"),
-    azure_endpoint = os.getenv("AZURE_OPENAI_ENDPOINT")
-)
+CONFIGS = [
+    {
+        "endpoint": os.getenv("AZURE_OPENAI_ENDPOINT_1"),
+        "api_key": os.getenv("AZURE_OPENAI_API_KEY_1")
+    },
+    {
+        "endpoint": os.getenv("AZURE_OPENAI_ENDPOINT_2"),
+        "api_key": os.getenv("AZURE_OPENAI_API_KEY_2")
+    },
+    {
+        "endpoint": os.getenv("AZURE_OPENAI_ENDPOINT_3"),
+        "api_key": os.getenv("AZURE_OPENAI_API_KEY_3")
+    }
+]
+
+def get_random_config():
+    return random.choice(CONFIGS)
 
 async def execute_eval(row_dict):
     tasks = {}
@@ -179,27 +191,34 @@ async def execute_eval(row_dict):
     gpt_fluency = 1
     ada_cosine_similarity_score = 1
 
+    selected_config = st.session_state['config']
+    client = AsyncAzureOpenAI(
+        api_key=selected_config["api_key"], #os.getenv("AZURE_OPENAI_API_KEY"), 
+        api_version=os.getenv("AZURE_OPENAI_API_VERSION"),
+        azure_endpoint=selected_config["endpoint"] #os.getenv("AZURE_OPENAI_ENDPOINT")
+    )
+    
     try:
         if len(row_dict["answer"])>0:
             tasks["gpt_similarity"] = asyncio.create_task(
-                chat_completion(gpt_similarity_prompt_sys, gpt_similarity_prompt_user.format(question=row_dict["question"], ground_truth=row_dict["ground_truth"],answer=row_dict["answer"]))
+                chat_completion(client, gpt_similarity_prompt_sys, gpt_similarity_prompt_user.format(question=row_dict["question"], ground_truth=row_dict["ground_truth"],answer=row_dict["answer"]))
             )
             tasks["gpt_fluency"] = asyncio.create_task(
-                chat_completion(gpt_fluency_prompt_sys, gpt_fluency_prompt_user.format(question=row_dict["question"],answer=row_dict["answer"]))
+                chat_completion(client, gpt_fluency_prompt_sys, gpt_fluency_prompt_user.format(question=row_dict["question"],answer=row_dict["answer"]))
             )
         if len(row_dict["answer"])>0 and len(row_dict["context"])>0:
             tasks["gpt_relevance"] = asyncio.create_task(
-                chat_completion(gpt_relevance_prompt_sys, gpt_relevance_prompt_user.format(question=row_dict["question"], context=row_dict["context"],answer=row_dict["answer"]))
+                chat_completion(client, gpt_relevance_prompt_sys, gpt_relevance_prompt_user.format(question=row_dict["question"], context=row_dict["context"],answer=row_dict["answer"]))
             )
             tasks["gpt_groundedness"] = asyncio.create_task(
-                chat_completion(gpt_groundedness_prompt_sys, gpt_groundedness_prompt_user.format(context=row_dict["context"],answer=row_dict["answer"]))
+                chat_completion(client, gpt_groundedness_prompt_sys, gpt_groundedness_prompt_user.format(context=row_dict["context"],answer=row_dict["answer"]))
             )
         if len(row_dict["ground_truth"])>0 and len(row_dict["answer"])>0:
             tasks["embeddings_gt"] = asyncio.create_task(
-                aget_embeddings(row_dict["ground_truth"])
+                aget_embeddings(client, row_dict["ground_truth"])
             )
             tasks["embeddings_ans"] = asyncio.create_task(
-                aget_embeddings(row_dict["answer"])
+                aget_embeddings(client, row_dict["answer"])
             )
 
         results = await asyncio.gather(*tasks.values())
@@ -240,7 +259,7 @@ async def _execute_eval_test(row_dict):
 
 
 @retry(wait=wait_random_exponential(min=1, max=60), stop=stop_after_attempt(6))
-async def chat_completion(system, user):
+async def chat_completion(client, system, user):
     try:
         response = await client.chat.completions.create(
             model=os.getenv("AZURE_OPENAI_DEPLOYMENT_NAME"),
@@ -270,11 +289,11 @@ async def _chat_completion_test(system, user):
     return random.choice(string_list)
 
 @retry(wait=wait_random_exponential(min=1, max=60), stop=stop_after_attempt(6))
-def generate_embeddings(text, model=os.getenv("AZURE_OPENAI_EMBED_DEPLOYMENT_NAME")):
+def generate_embeddings(client, text, model=os.getenv("AZURE_OPENAI_EMBED_DEPLOYMENT_NAME")):
     return client.embeddings.create(input = [text], model=model).data[0].embedding
 
 @retry(wait=wait_random_exponential(min=1, max=60), stop=stop_after_attempt(6))
-async def aget_embeddings(text, model=os.getenv("AZURE_OPENAI_EMBED_DEPLOYMENT_NAME")):
+async def aget_embeddings(client, text, model=os.getenv("AZURE_OPENAI_EMBED_DEPLOYMENT_NAME")):
     data = (
         await client.embeddings.create(input=[text], model=model)
     ).data
@@ -326,6 +345,8 @@ if 'result' not in st.session_state:
     st.session_state['result'] = None
 if 'count' not in st.session_state:
     st.session_state['count'] = None
+if 'config' not in st.session_state:
+    st.session_state['config'] = None
 
 # データ処理関数
 async def process_csv(data):
@@ -362,6 +383,7 @@ async def process_csv(data):
 
 # main coroutine
 async def main():
+    st.session_state['config'] = get_random_config()
     # 非同期処理の実行
     st.session_state['result'] = await process_csv(st.session_state['data'])
 
@@ -382,6 +404,7 @@ if st.button('Reset'):
     st.session_state['data'] = None
     st.session_state['result'] = None
     st.session_state['count'] = None
+    st.session_state['config'] = None
     # ファイルアップローダーのキャッシュをクリア
     st.experimental_rerun()
 
